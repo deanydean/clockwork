@@ -1,6 +1,6 @@
 package watches
 
-import "github.com/deanydean/watchit/core"
+import "github.com/oddcyborg/watchit/core"
 import "time"
 
 // A Watch that will poll an EventSupplier for events at regular intervals

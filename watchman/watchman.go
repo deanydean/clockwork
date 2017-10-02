@@ -1,6 +1,6 @@
 package watchman
 
-import "github.com/deanydean/watchit/core"
+import "github.com/oddcyborg/watchit/core"
 
 // A simple Watcher that links a Watch to an EventConsumer
 type WatchMan struct {
