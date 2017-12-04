@@ -1,18 +1,21 @@
 package watches
 
 import (
-	"strconv"
+	"fmt"
 	"strings"
 	"time"
 
 	"github.com/oddcyborg/watchit/core"
-	"github.com/oddcyborg/watchit/utils"
+	"github.com/oddcyborg/watchit/core/utils"
 )
 
+// ProcessDeathWatch watch that checks if a process has died
 type ProcessDeathWatch struct {
 	pid int
 }
 
+// Observe whether a process has died, returns a WatchEvent if it has, or nil
+// if not
 func (watch ProcessDeathWatch) Observe() *core.WatchEvent {
 	if !utils.ProcessExists(watch.pid) {
 		return core.NewWatchEvent(nil)
@@ -21,6 +24,7 @@ func (watch ProcessDeathWatch) Observe() *core.WatchEvent {
 	return nil
 }
 
+// NewProcessDeathWatch returns a new ProcessDeathWatch for the provided pid
 func NewProcessDeathWatch(pid int) *ProcessDeathWatch {
 	watch := new(ProcessDeathWatch)
 	watch.pid = pid
@@ -29,58 +33,138 @@ func NewProcessDeathWatch(pid int) *ProcessDeathWatch {
 
 // ProcessHighCPUWatch will watch for a process CPU going over a threshold
 type ProcessHighCPUWatch struct {
-	pid          int
-	cpuThreshold float64
-	statsWatch   ProcessStatsWatch
+	cpuThreshold        float64
+	procStartTime       int
+	sysClockTick        int
+	procTicksSinceStart int
+	statsWatch          *ProcessStatsWatch
 }
 
+// Observe whether a process CPU is high, returns a WatchEvent if it is, or nil
+// if it's not
 func (watch ProcessHighCPUWatch) Observe() *core.WatchEvent {
+	var statsEvent = watch.statsWatch.Observe()
+
+	// Get all the params we need to work out CPU usage
+	var uptime = utils.GetSystemUptime()
+	var utime, _ = statsEvent.GetAsInteger(StatsProcTime)
+	var stime, _ = statsEvent.GetAsInteger(StatsKernTime)
+	//var cutime, _ = statsEvent.GetAsInteger(StatsProcWaitTime)
+	//var cstime, _ = statsEvent.GetAsInteger(StatsKernWaitTime)
+
+	var totalTime = utime + stime
+	var seconds = uptime - float64(watch.procTicksSinceStart)
+
+	var cpuUsage = float64(100) *
+		(float64(totalTime) / float64(watch.sysClockTick)) /
+		seconds
+
+	statsEvent.Data[StatsCPU] = cpuUsage
+
+	fmt.Println("CPU usage", cpuUsage, "threshold", watch.cpuThreshold)
+
+	if cpuUsage > watch.cpuThreshold {
+		return statsEvent
+	}
+
+	fmt.Println("No CPU watch event")
 	return nil
 }
 
+// NewProcessHighCPUWatch returns a new ProcessHighCPUWatch for the provided pid
+// with the provided high CPU threshold
 func NewProcessHighCPUWatch(pid int, threshold float64) *ProcessHighCPUWatch {
 	watch := new(ProcessHighCPUWatch)
-	watch.pid = pid
 	watch.cpuThreshold = threshold
+	watch.statsWatch = new(ProcessStatsWatch)
+	watch.statsWatch.pid = pid
+
+	var procStats = watch.statsWatch.Observe()
+	watch.procStartTime, _ = procStats.GetAsInteger(StatsProcStartTime)
+	watch.sysClockTick = utils.GetSystemClockTick()
+
+	if watch.sysClockTick == -1 {
+		fmt.Println("Failed to get system clock speed, cannot create watch")
+		return nil
+	}
+
+	watch.procTicksSinceStart = watch.procStartTime / watch.sysClockTick
+
 	return watch
 }
 
 // ProcessHighMemWatch will watch for a process memory going over a thresold
 type ProcessHighMemWatch struct {
-	pid          int
 	memThreshold float64
-	statsWatch   ProcessStatsWatch
+	statsWatch   *ProcessStatsWatch
 }
 
+// Observe whether a process has high memory usage, returns a WatchEvent if it
+// has or nil if it hasn't
 func (watch ProcessHighMemWatch) Observe() *core.WatchEvent {
+	var statsEvent = watch.statsWatch.Observe()
+
+	var rss, _ = statsEvent.GetAsInteger(StatsProcRSS)
+
+	var bytesInUse = rss * utils.GetPageSize()
+	statsEvent.Data[StatsMem] = bytesInUse
+
+	// TODO remove hard-coded system mem limit., get from system
+	var systemMemory = 8000000000
+	var memUsage = float64(bytesInUse) / (float64(systemMemory) / 100)
+
+	fmt.Println("Mem usage", memUsage, "threshold", watch.memThreshold)
+
+	if float64(memUsage) > watch.memThreshold {
+		return statsEvent
+	}
+
+	// Nothing to report
 	return nil
 }
 
+// NewProcessHighMemWatch returns a new ProcessHighMemWatch for the provided pid
+// with the provided high memory threshold
 func NewProcessHighMemWatch(pid int, threshold float64) *ProcessHighMemWatch {
 	watch := new(ProcessHighMemWatch)
-	watch.pid = pid
 	watch.memThreshold = threshold
+	watch.statsWatch = new(ProcessStatsWatch)
+	watch.statsWatch.pid = pid
 	return watch
 }
 
-// TODO switch stats back to stats object/struct
+// StatsRaw is a key in WatchEvent for raw process information
+var StatsRaw = "stats.raw"
 
-var STATS_RAW = "stats.raw"
-var STATS_CPU = "stats.cpu"
-var STATS_MEM = "stats.mem"
-var STATS_TIMESTAMP = "stats.timestamp"
-var STATS_PROCTIME = "stats.proctime"
-var STATS_PROCMEM = "stats.procmem"
+// StatsCPU is a key in WatchEvent for process CPU usage
+var StatsCPU = "stats.cpu"
 
+// StatsMem is a key in WatchEvent for process memory usage
+var StatsMem = "stats.mem"
+
+// StatsTimestamp is a key in WatchEvent for process timestamp
+var StatsTimestamp = "stats.timestamp"
+
+// StatsProcTime is a key in WatchEvent for process processor time
+var StatsProcTime = "stats.proctime"
+
+// StatsProcMem is a key in WatchEvent for process rss value
+var StatsProcRSS = "stats.procrss"
+
+var StatsKernTime = "stats.kerntime"
+
+var StatsProcWaitTime = "stats.procwaittime"
+var StatsKernWaitTime = "stats.kernwaittime"
+var StatsProcStartTime = "stats.procstarttime"
+
+// ProcessStatsWatch watch that observes process information
 type ProcessStatsWatch struct {
 	pid int
 }
 
 // Observe process stats for the watch's pid
 func (watch ProcessStatsWatch) Observe() *core.WatchEvent {
-	var statFile = "/proc/" + strconv.Itoa(watch.pid) + "/stat"
-	fileStr, err := utils.GetFileAsString(statFile)
-	var timestamp = time.Now()
+	var statsStr, err = utils.GetProcessStats(watch.pid)
 
 	if err != nil {
 		return nil
@@ -88,15 +172,17 @@ func (watch ProcessStatsWatch) Observe() *core.WatchEvent {
 
 	// Parse stats file and put in the defaults
 	var stats = make(map[string]interface{})
-	var rawStats = strings.Split(fileStr, " ")
-	stats[STATS_RAW] = rawStats
-	stats[STATS_CPU] = -1
-	stats[STATS_MEM] = -1
-	stats[STATS_TIMESTAMP] = timestamp
+	var rawStats = strings.Split(statsStr, " ")
+	stats[StatsRaw] = rawStats
+	stats[StatsTimestamp] = time.Now()
 
 	// Put in the specifics
-	stats[STATS_PROCTIME] = rawStats[14]
-	stats[STATS_PROCMEM] = rawStats[24]
+	stats[StatsProcTime] = rawStats[13]
+	stats[StatsKernTime] = rawStats[14]
+	stats[StatsProcWaitTime] = rawStats[15]
+	stats[StatsKernWaitTime] = rawStats[16]
+	stats[StatsProcStartTime] = rawStats[21]
+	stats[StatsProcRSS] = rawStats[23]
 
 	return core.NewWatchEvent(stats)
 }

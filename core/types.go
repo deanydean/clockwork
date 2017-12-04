@@ -1,6 +1,8 @@
 // Package core proces the core watchit API
 package core
 
+import "strconv"
+
 // WatchEvent triggered while watching
 type WatchEvent struct {
 	Data map[string]interface{}
@@ -9,6 +11,16 @@ type WatchEvent struct {
 // Get the named parameter from this Event
 func (e WatchEvent) Get(name string) interface{} {
 	return e.Data[name]
+}
+
+// GetAsInteger gets the named parameter from this Event as an int
+func (e WatchEvent) GetAsInteger(name string) (int, error) {
+	return strconv.Atoi(e.Data[name].(string))
+}
+
+// GetAsFloat gets the named parameter from this Event as a float
+func (e WatchEvent) GetAsFloat(name string) (float64, error) {
+	return strconv.ParseFloat(e.Data[name].(string), 64)
 }
 
 // NewWatchEvent creates a new WatchEvent with the provided event data

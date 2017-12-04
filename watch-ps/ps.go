@@ -6,10 +6,10 @@ import (
 	"os"
 
 	"github.com/oddcyborg/watchit/core"
-	"github.com/oddcyborg/watchit/triggers"
-	"github.com/oddcyborg/watchit/utils"
-	"github.com/oddcyborg/watchit/watchers"
-	"github.com/oddcyborg/watchit/watches"
+	"github.com/oddcyborg/watchit/core/triggers"
+	"github.com/oddcyborg/watchit/core/utils"
+	"github.com/oddcyborg/watchit/core/watchers"
+	"github.com/oddcyborg/watchit/core/watches"
 )
 
 func main() {
@@ -30,7 +30,7 @@ func main() {
 	// process ends
 	var deathWatch = watches.NewProcessDeathWatch(pid)
 	var highCPUWatch = watches.NewProcessHighCPUWatch(pid, 50)
-	var highMemWatch = watches.NewProcessHighCPUWatch(pid, 50)
+	var highMemWatch = watches.NewProcessHighMemWatch(pid, 10)
 
 	// Create watchmen for high CPU and Mem
 	var cpuWatchMan = watchers.NewWatchMan(highCPUWatch)
