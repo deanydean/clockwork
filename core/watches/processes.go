@@ -49,8 +49,6 @@ func (watch ProcessHighCPUWatch) Observe() *core.WatchEvent {
 	var uptime = utils.GetSystemUptime()
 	var utime, _ = statsEvent.GetAsInteger(StatsProcTime)
 	var stime, _ = statsEvent.GetAsInteger(StatsKernTime)
-	//var cutime, _ = statsEvent.GetAsInteger(StatsProcWaitTime)
-	//var cstime, _ = statsEvent.GetAsInteger(StatsKernWaitTime)
 
 	var totalTime = utime + stime
 	var seconds = uptime - float64(watch.procTicksSinceStart)
@@ -61,13 +59,13 @@ func (watch ProcessHighCPUWatch) Observe() *core.WatchEvent {
 
 	statsEvent.Data[StatsCPU] = cpuUsage
 
-	fmt.Println("CPU usage", cpuUsage, "threshold", watch.cpuThreshold)
+	fmt.Println("total", totalTime, "tick", watch.sysClockTick,
+		"seconds", seconds, "usage", cpuUsage, "threshold", watch.cpuThreshold)
 
 	if cpuUsage > watch.cpuThreshold {
 		return statsEvent
 	}
 
-	fmt.Println("No CPU watch event")
 	return nil
 }
 
@@ -109,13 +107,7 @@ func (watch ProcessHighMemWatch) Observe() *core.WatchEvent {
 	var bytesInUse = rss * utils.GetPageSize()
 	statsEvent.Data[StatsMem] = bytesInUse
 
-	// TODO remove hard-coded system mem limit., get from system
-	var systemMemory = 8000000000
-	var memUsage = float64(bytesInUse) / (float64(systemMemory) / 100)
-
-	fmt.Println("Mem usage", memUsage, "threshold", watch.memThreshold)
-
-	if float64(memUsage) > watch.memThreshold {
+	if float64(bytesInUse) > watch.memThreshold {
 		return statsEvent
 	}
 
