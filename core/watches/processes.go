@@ -33,11 +33,11 @@ func NewProcessDeathWatch(pid int) *ProcessDeathWatch {
 
 // ProcessHighCPUWatch will watch for a process CPU going over a threshold
 type ProcessHighCPUWatch struct {
-	cpuThreshold        float64
-	procStartTime       int
-	sysClockTick        int
-	procTicksSinceStart int
-	statsWatch          *ProcessStatsWatch
+	cpuThreshold       float64
+	procStartTime      int
+	sysClockTick       int
+	procTimeSinceStart int
+	statsWatch         *ProcessStatsWatch
 }
 
 // Observe whether a process CPU is high, returns a WatchEvent if it is, or nil
@@ -49,16 +49,18 @@ func (watch ProcessHighCPUWatch) Observe() *core.WatchEvent {
 	var uptime = utils.GetSystemUptime()
 	var utime, _ = statsEvent.GetAsInteger(StatsProcTime)
 	var stime, _ = statsEvent.GetAsInteger(StatsKernTime)
+	var cutime, _ = statsEvent.GetAsInteger(StatsProcWaitTime)
+	var cstime, _ = statsEvent.GetAsInteger(StatsKernWaitTime)
 
-	var totalTime = utime + stime
-	var seconds = uptime - float64(watch.procTicksSinceStart)
+	var totalTime = utime + stime + cutime + cstime
+	var seconds = uptime - float64(watch.procTimeSinceStart)
 
-	var cpuUsage = float64(100) *
-		(float64(totalTime) / float64(watch.sysClockTick)) /
-		seconds
+	var cpuUsage = ((float64(totalTime) / float64(watch.sysClockTick)) /
+		seconds)
 
 	statsEvent.Data[StatsCPU] = cpuUsage
 
+	fmt.Println("uptime", uptime, "utime", utime, "stime", stime)
 	fmt.Println("total", totalTime, "tick", watch.sysClockTick,
 		"seconds", seconds, "usage", cpuUsage, "threshold", watch.cpuThreshold)
 
@@ -86,7 +88,7 @@ func NewProcessHighCPUWatch(pid int, threshold float64) *ProcessHighCPUWatch {
 		return nil
 	}
 
-	watch.procTicksSinceStart = watch.procStartTime / watch.sysClockTick
+	watch.procTimeSinceStart = watch.procStartTime / watch.sysClockTick
 
 	return watch
 }
@@ -140,13 +142,19 @@ var StatsTimestamp = "stats.timestamp"
 // StatsProcTime is a key in WatchEvent for process processor time
 var StatsProcTime = "stats.proctime"
 
-// StatsProcMem is a key in WatchEvent for process rss value
+// StatsProcRSS is a key in WatchEvent for process rss value
 var StatsProcRSS = "stats.procrss"
 
+// StatsKernTime is a key in WatchEvent for process kernel time
 var StatsKernTime = "stats.kerntime"
 
+// StatsProcWaitTime is a key in WatchEvent for process user wait time
 var StatsProcWaitTime = "stats.procwaittime"
+
+// StatsKernWaitTime is a key in WatchEvent for process kernel wait time
 var StatsKernWaitTime = "stats.kernwaittime"
+
+// StatsProcStartTime is a key in WatchEvent for process start time
 var StatsProcStartTime = "stats.procstarttime"
 
 // ProcessStatsWatch watch that observes process information
