@@ -8,15 +8,19 @@ import (
 	"github.com/oddcyborg/watchit/core"
 )
 
+// FileName is a key in EventWatch for a file name
 var FileName = "file.name"
 
+// FileModTime is a key in EventWatch for a file's modified time
 var FileModTime = "file.modifiedtime"
 
+// FileModifiedWatch is a Watch that observes when a file modified time changes
 type FileModifiedWatch struct {
 	fileName         string
 	lastModifiedTime time.Time
 }
 
+// NewFileModifiedWatch creates a new FileModifiedWatch for the provided file
 func NewFileModifiedWatch(file string) *FileModifiedWatch {
 	watch := new(FileModifiedWatch)
 	watch.fileName = file
@@ -33,6 +37,7 @@ func NewFileModifiedWatch(file string) *FileModifiedWatch {
 	return watch
 }
 
+// Observe whether a file has been modified since it was last observed
 func (watch *FileModifiedWatch) Observe() *core.WatchEvent {
 	// Get file information
 	var info, err = os.Stat(watch.fileName)
