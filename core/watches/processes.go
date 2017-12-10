@@ -16,7 +16,7 @@ type ProcessDeathWatch struct {
 
 // Observe whether a process has died, returns a WatchEvent if it has, or nil
 // if not
-func (watch ProcessDeathWatch) Observe() *core.WatchEvent {
+func (watch *ProcessDeathWatch) Observe() *core.WatchEvent {
 	if !utils.ProcessExists(watch.pid) {
 		return core.NewWatchEvent(nil)
 	}
@@ -42,7 +42,7 @@ type ProcessHighCPUWatch struct {
 
 // Observe whether a process CPU is high, returns a WatchEvent if it is, or nil
 // if it's not
-func (watch ProcessHighCPUWatch) Observe() *core.WatchEvent {
+func (watch *ProcessHighCPUWatch) Observe() *core.WatchEvent {
 	var statsEvent = watch.statsWatch.Observe()
 
 	// Get all the params we need to work out CPU usage
@@ -101,7 +101,7 @@ type ProcessHighMemWatch struct {
 
 // Observe whether a process has high memory usage, returns a WatchEvent if it
 // has or nil if it hasn't
-func (watch ProcessHighMemWatch) Observe() *core.WatchEvent {
+func (watch *ProcessHighMemWatch) Observe() *core.WatchEvent {
 	var statsEvent = watch.statsWatch.Observe()
 
 	var rss, _ = statsEvent.GetAsInteger(StatsProcRSS)
@@ -163,7 +163,7 @@ type ProcessStatsWatch struct {
 }
 
 // Observe process stats for the watch's pid
-func (watch ProcessStatsWatch) Observe() *core.WatchEvent {
+func (watch *ProcessStatsWatch) Observe() *core.WatchEvent {
 	var statsStr, err = utils.GetProcessStats(watch.pid)
 
 	if err != nil {
