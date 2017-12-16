@@ -127,6 +127,64 @@ func NewProcessHighMemWatch(pid int, threshold float64) *ProcessHighMemWatch {
 	return watch
 }
 
+type ProcessHighIOWatch struct {
+	ioThreshold     float64
+	lastObservation time.Time
+	bytesRead       int64
+	bytesWritten    int64
+	ioWatch         *ProcessIOWatch
+}
+
+func (watch *ProcessHighIOWatch) Observe() *core.WatchEvent {
+	var ioEvent = watch.ioWatch.Observe()
+
+	// Work out how much IO the process has performed sine the last check
+	var written, writeErr = ioEvent.GetAsInteger(IOWriteBytes)
+	var read, readErr = ioEvent.GetAsInteger(IOReadBytes)
+
+	// TODO Check errors
+	if writeErr != nil || readErr != nil {
+		fmt.Println("Failed to get io info, readErr", readErr, "writeErr", writeErr)
+		return nil
+	}
+
+	var now = time.Now()
+	var since = now.Sub(watch.lastObservation) / time.Second
+
+	if since > 0 {
+		var writesPerSec = (int64(written) - watch.bytesWritten) / int64(since)
+		var readsPerSec = (int64(read) - watch.bytesRead) / int64(since)
+
+		fmt.Println("writes", written, "read", read,
+			"write/s", writesPerSec, "read/s", readsPerSec)
+
+		ioEvent.Data[IOReadsPerSec] = readsPerSec
+		ioEvent.Data[IOWritesPerSec] = writesPerSec
+	}
+
+	watch.lastObservation = now
+	watch.bytesRead = int64(read)
+	watch.bytesWritten = int64(written)
+
+	// Nothing to report
+	return nil
+}
+
+func NewProcessHighIOWatch(pid int, threshold float64) *ProcessHighIOWatch {
+	watch := new(ProcessHighIOWatch)
+	watch.ioThreshold = threshold
+	watch.ioWatch = new(ProcessIOWatch)
+	watch.ioWatch.pid = pid
+
+	// Init the watch with an initial value
+	watch.bytesRead = 0
+	watch.bytesWritten = 0
+	watch.lastObservation = time.Now()
+	watch.Observe()
+
+	return watch
+}
+
 // StatsRaw is a key in WatchEvent for raw process information
 var StatsRaw = "stats.raw"
 
@@ -185,4 +243,41 @@ func (watch *ProcessStatsWatch) Observe() *core.WatchEvent {
 	stats[StatsProcRSS] = rawStats[23]
 
 	return core.NewWatchEvent(stats)
+}
+
+type ProcessIOWatch struct {
+	pid int
+}
+
+var IORaw = "io.raw"
+var IOReadChar = "io.rchar"
+var IOWriteChar = "io.wchar"
+var IOReadCalls = "io.syscr"
+var IOWriteCalls = "io.syscw"
+var IOReadBytes = "io.read_bytes"
+var IOWriteBytes = "io.write_bytes"
+var IOCancelledWriteBytes = "io.cancelled_write_bytes"
+var IOWritesPerSec = "io.writes_per_sec"
+var IOReadsPerSec = "io.reads_per_sec"
+
+func (watch *ProcessIOWatch) Observe() *core.WatchEvent {
+	var ioStr, err = utils.GetProcessIO(watch.pid)
+
+	if err != nil {
+		return nil
+	}
+
+	var io = make(map[string]interface{})
+	var rawIO = strings.Split(ioStr, "\n")
+	io[IORaw] = rawIO
+
+	// Parse the lines, using the key for the event key
+	for _, line := range rawIO {
+		var kv = strings.Split(line, ":")
+		if len(kv) == 2 {
+			io["io."+kv[0]] = strings.TrimSpace(kv[1])
+		}
+	}
+
+	return core.NewWatchEvent(io)
 }

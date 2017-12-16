@@ -20,6 +20,11 @@ func GetProcessStats(pid int) (string, error) {
 	return GetFileAsString(statFile)
 }
 
+func GetProcessIO(pid int) (string, error) {
+	var ioFile = "/proc/" + strconv.Itoa(pid) + "/io"
+	return GetFileAsString(ioFile)
+}
+
 func GetSystemUptime() float64 {
 	var statFile = "/proc/uptime"
 	var fileContents, _ = GetFileAsString(statFile)
