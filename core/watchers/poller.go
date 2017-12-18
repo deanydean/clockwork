@@ -4,7 +4,10 @@ import (
 	"time"
 
 	"github.com/oddcyborg/watchit/core"
+	"github.com/oddcyborg/watchit/core/utils"
 )
+
+var log = utils.GetLogger()
 
 // PollerWatcher will poll an EventSupplier for events at regular intervals
 type PollerWatcher struct {
@@ -20,6 +23,7 @@ func (pw PollerWatcher) Watch(trigger core.WatchTrigger) core.WatcherCanceller {
 		for polling {
 			result := pw.poll.Observe()
 			if result != nil {
+				log.Debug("Got result=%s from watch=%s", result.Data, pw.poll)
 				trigger.OnEvent(result)
 			}
 

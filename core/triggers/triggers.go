@@ -13,7 +13,7 @@ func (trigger FuncTrigger) OnEvent(event *core.WatchEvent) {
 }
 
 // NewFuncTrigger create a new FuncTrigger for the provided func
-func NewFuncTrigger(onEvent func(*core.WatchEvent)) *FuncTrigger {
+func NewFuncTrigger(onEvent func(*core.WatchEvent)) core.WatchTrigger {
 	trigger := new(FuncTrigger)
 	trigger.onEvent = onEvent
 	return trigger
@@ -33,7 +33,7 @@ func (bt BroadcastTrigger) OnEvent(e *core.WatchEvent) {
 }
 
 // NewBroadcastTrigger creates a new BroadcastTrigger for the provided triggers
-func NewBroadcastTrigger(triggers []core.WatchTrigger) *BroadcastTrigger {
+func NewBroadcastTrigger(triggers []core.WatchTrigger) core.WatchTrigger {
 	bt := new(BroadcastTrigger)
 	bt.triggers = triggers
 	return bt

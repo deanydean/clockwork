@@ -1,13 +1,14 @@
 package watches
 
 import (
-	"fmt"
 	"strings"
 	"time"
 
 	"github.com/oddcyborg/watchit/core"
 	"github.com/oddcyborg/watchit/core/utils"
 )
+
+var log = utils.GetLogger()
 
 // ProcessDeathWatch watch that checks if a process has died
 type ProcessDeathWatch struct {
@@ -47,10 +48,10 @@ func (watch *ProcessHighCPUWatch) Observe() *core.WatchEvent {
 
 	// Get all the params we need to work out CPU usage
 	var uptime = utils.GetSystemUptime()
-	var utime, _ = statsEvent.GetAsInteger(StatsProcTime)
-	var stime, _ = statsEvent.GetAsInteger(StatsKernTime)
-	var cutime, _ = statsEvent.GetAsInteger(StatsProcWaitTime)
-	var cstime, _ = statsEvent.GetAsInteger(StatsKernWaitTime)
+	var utime = statsEvent.GetAsInteger(StatsProcTime)
+	var stime = statsEvent.GetAsInteger(StatsKernTime)
+	var cutime = statsEvent.GetAsInteger(StatsProcWaitTime)
+	var cstime = statsEvent.GetAsInteger(StatsKernWaitTime)
 
 	var totalTime = utime + stime + cutime + cstime
 	var seconds = uptime - float64(watch.procTimeSinceStart)
@@ -60,9 +61,9 @@ func (watch *ProcessHighCPUWatch) Observe() *core.WatchEvent {
 
 	statsEvent.Data[StatsCPU] = cpuUsage
 
-	fmt.Println("uptime", uptime, "utime", utime, "stime", stime)
-	fmt.Println("total", totalTime, "tick", watch.sysClockTick,
-		"seconds", seconds, "usage", cpuUsage, "threshold", watch.cpuThreshold)
+	log.Debug("uptime=%d utime=%d stime=%d", uptime, utime, stime)
+	log.Debug("total=%d tick=%d seconds=%d usage=%d threshold=%d",
+		totalTime, watch.sysClockTick, seconds, cpuUsage, watch.cpuThreshold)
 
 	if cpuUsage > watch.cpuThreshold {
 		return statsEvent
@@ -80,11 +81,11 @@ func NewProcessHighCPUWatch(pid int, threshold float64) *ProcessHighCPUWatch {
 	watch.statsWatch.pid = pid
 
 	var procStats = watch.statsWatch.Observe()
-	watch.procStartTime, _ = procStats.GetAsInteger(StatsProcStartTime)
+	watch.procStartTime = procStats.GetAsInteger(StatsProcStartTime)
 	watch.sysClockTick = utils.GetSystemClockTick()
 
 	if watch.sysClockTick == -1 {
-		fmt.Println("Failed to get system clock speed, cannot create watch")
+		log.Warn("Failed to get system clock speed, cannot create watch")
 		return nil
 	}
 
@@ -104,7 +105,7 @@ type ProcessHighMemWatch struct {
 func (watch *ProcessHighMemWatch) Observe() *core.WatchEvent {
 	var statsEvent = watch.statsWatch.Observe()
 
-	var rss, _ = statsEvent.GetAsInteger(StatsProcRSS)
+	var rss = statsEvent.GetAsInteger(StatsProcRSS)
 
 	var bytesInUse = rss * utils.GetPageSize()
 	statsEvent.Data[StatsMem] = bytesInUse
@@ -139,12 +140,12 @@ func (watch *ProcessHighIOWatch) Observe() *core.WatchEvent {
 	var ioEvent = watch.ioWatch.Observe()
 
 	// Work out how much IO the process has performed sine the last check
-	var written, writeErr = ioEvent.GetAsInteger(IOWriteBytes)
-	var read, readErr = ioEvent.GetAsInteger(IOReadBytes)
+	var read = ioEvent.GetAsInteger(IOReadBytes)
+	var written = ioEvent.GetAsInteger(IOWriteBytes)
 
 	// TODO Check errors
-	if writeErr != nil || readErr != nil {
-		fmt.Println("Failed to get io info, readErr", readErr, "writeErr", writeErr)
+	if read == -1 || written == -1 {
+		log.Warn("Failed to get io info")
 		return nil
 	}
 
@@ -155,8 +156,14 @@ func (watch *ProcessHighIOWatch) Observe() *core.WatchEvent {
 		var writesPerSec = (int64(written) - watch.bytesWritten) / int64(since)
 		var readsPerSec = (int64(read) - watch.bytesRead) / int64(since)
 
-		fmt.Println("writes", written, "read", read,
-			"write/s", writesPerSec, "read/s", readsPerSec)
+		log.Debug("rchar=%d sysrc=%d read=%d read/s=%d",
+			ioEvent.GetAsInteger(IOReadChar),
+			ioEvent.GetAsInteger(IOReadCalls),
+			read, readsPerSec)
+		log.Debug("wchar=%d syswc=%d written=%d read/s=%d",
+			ioEvent.GetAsInteger(IOWriteChar),
+			ioEvent.GetAsInteger(IOWriteCalls),
+			written, writesPerSec)
 
 		ioEvent.Data[IOReadsPerSec] = readsPerSec
 		ioEvent.Data[IOWritesPerSec] = writesPerSec
