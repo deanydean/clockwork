@@ -31,25 +31,25 @@ var LogDebug = 8
 
 func (logger *WatchLogger) Error(format string, params ...interface{}) {
 	if logger.level >= LogError {
-		logger.log(LogError, format, params)
+		logger.log(LogError, format, params...)
 	}
 }
 
 func (logger *WatchLogger) Warn(format string, params ...interface{}) {
 	if logger.level >= LogWarn {
-		logger.log(LogWarn, format, params)
+		logger.log(LogWarn, format, params...)
 	}
 }
 
 func (logger *WatchLogger) Info(format string, params ...interface{}) {
 	if logger.level >= LogInfo {
-		logger.log(LogInfo, format, params)
+		logger.log(LogInfo, format, params...)
 	}
 }
 
 func (logger *WatchLogger) Debug(format string, params ...interface{}) {
 	if logger.level >= LogDebug {
-		logger.log(LogDebug, format, params)
+		logger.log(LogDebug, format, params...)
 	}
 }
 
@@ -62,7 +62,7 @@ func (logger *WatchLogger) log(level int, format string, params ...interface{}) 
 	var logEvent = make(map[string]interface{})
 	logEvent[logLevel] = level
 	logEvent[logFormat] = format + "\n"
-	logEvent[logParams] = params[0]
+	logEvent[logParams] = params
 	logEvent[logTimestamp] = time.Now()
 
 	// Handle log event
