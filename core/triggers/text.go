@@ -12,6 +12,12 @@ type TextReporterTrigger struct {
 }
 
 // OnEvent is called when a watch event triggers
-func (trigger TextReporterTrigger) OnEvent(event core.WatchEvent) {
+func (trigger TextReporterTrigger) OnEvent(event *core.WatchEvent) {
 	fmt.Printf(trigger.message, event)
+}
+
+func NewTextReporterTrigger(message string) TextReporterTrigger {
+	var trigger = new(TextReporterTrigger)
+	trigger.message = message
+	return *trigger
 }

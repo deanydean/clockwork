@@ -24,10 +24,10 @@ func NewLogger(level int, trigger core.WatchTrigger) *WatchLogger {
 	return logger
 }
 
-var LogError = 1
-var LogWarn = 2
-var LogInfo = 4
-var LogDebug = 8
+var LogError = 1 << 0
+var LogWarn = 1 << 1
+var LogInfo = 1 << 2
+var LogDebug = 1 << 4
 
 func (logger *WatchLogger) Error(format string, params ...interface{}) {
 	if logger.level >= LogError {
