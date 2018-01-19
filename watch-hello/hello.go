@@ -5,19 +5,22 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/deanydean/watchit/watches"
-	"github.com/deanydean/watchit/watchman"
+	"github.com/deanydean/watchit/core/watchers"
 	"github.com/oddcyborg/watchit/core"
 	"github.com/oddcyborg/watchit/core/triggers"
 )
 
-// Function that will create a new event each time it is called
-func newEvent() *core.Event {
-	data := map[string]string{
+// HelloWatch will create a new event each time it is observed
+type HelloWatch struct {
+}
+
+// Observe the hello events
+func (hw HelloWatch) Observe() *core.WatchEvent {
+	data := map[string]interface{}{
 		"Hello": "world!",
 	}
 
-	return core.NewEvent(data)
+	return core.NewWatchEvent(data)
 }
 
 func main() {
@@ -26,20 +29,17 @@ func main() {
 	watchFor := flag.Int("for", 10, "How long to watch for")
 	flag.Parse()
 
-	// A poller watch that will call the newEvent method at intervals
-	var poller = watches.NewPollerWatch(newEvent, *pauseFor)
+	// A poller watcher that will call the newEvent method at intervals
+	var poller = watchers.NewPollerWatcher(new(HelloWatch), *pauseFor)
 
 	// The action that will print the new event
-	var action = triggers.FuncTrigger(func(e *core.WatchEvent) {
+	var action = triggers.NewFuncTrigger(func(e *core.WatchEvent) {
 		fmt.Println("Hello,", e.Get("Hello"))
 	})
 
-	// The watchman that tells the poller to trigger the action on events
-	var watchman = watchman.NewWatchMan(poller, action)
-
 	// Start watching
+	var canceller = poller.Watch(action)
 	fmt.Println("Watching hellos....")
-	var canceller = watchman.Watch()
 
 	// Wait for a bit
 	time.Sleep(time.Duration(*watchFor) * time.Second)

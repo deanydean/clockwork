@@ -32,24 +32,15 @@ func main() {
 	var highCPUWatch = watches.NewProcessHighCPUWatch(pid, 50)
 	var highMemWatch = watches.NewProcessHighMemWatch(pid, 500000000)
 
-	// Create watchmen for high CPU and Mem
-	var cpuWatchMan = watchers.NewWatchMan(highCPUWatch)
-	var memWatchMan = watchers.NewWatchMan(highMemWatch)
-	var deathWatchMan = watchers.NewWatchMan(deathWatch)
+	var watchMan = watchers.NewWatchMan([]core.Watch{highCPUWatch, highMemWatch})
 
 	// Create the triggers
-	var highCPUTrigger = triggers.NewFuncTrigger(func(e *core.WatchEvent) {
-		fmt.Println("Process", pid, "has high CPU:", e.Get(watches.StatsCPU))
+	var textOutputTrigger = triggers.NewFuncTrigger(func(e *core.WatchEvent) {
+		fmt.Println("Process", pid, e)
 	})
-	var highMemTrigger = triggers.NewFuncTrigger(func(e *core.WatchEvent) {
-		fmt.Println("Process", pid, "has high memory:", e.Get(watches.StatsMem))
-	})
-
 	// Start watching
 	fmt.Println("Watching pid", pid, "....")
-	var cpuWatchCanceller = cpuWatchMan.Watch(highCPUTrigger)
-	var memWatchCanceller = memWatchMan.Watch(highMemTrigger)
-
+	var cancelWatch = watchMan.Watch(textOutputTrigger)
 	processEnded := make(chan bool)
 
 	go func() {
@@ -57,16 +48,12 @@ func main() {
 		var onDeath = func(e *core.WatchEvent) {
 			fmt.Println("Process", pid, "died!")
 
-			// Caller the cancellers to cancel the watchmen
-			if cpuWatchCanceller != nil {
-				cpuWatchCanceller()
-			}
-			if memWatchCanceller != nil {
-				memWatchCanceller()
-			}
+			// Caller the cancellers to cancel the watchman
+			cancelWatch()
 
 			processEnded <- true
 		}
+		var deathWatchMan = watchers.NewWatchMan([]core.Watch{deathWatch})
 		deathWatchMan.Watch(triggers.NewFuncTrigger(onDeath))
 	}()
 

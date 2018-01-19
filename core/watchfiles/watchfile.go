@@ -5,15 +5,16 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/deanydean/watchit/core/triggers"
-	"github.com/deanydean/watchit/core/watchers"
-	"github.com/deanydean/watchit/core/watches"
 	"github.com/oddcyborg/watchit/core"
+	"github.com/oddcyborg/watchit/core/triggers"
 	"github.com/oddcyborg/watchit/core/utils"
+	"github.com/oddcyborg/watchit/core/watchers"
+	"github.com/oddcyborg/watchit/core/watches"
 )
 
 var log = utils.GetLogger()
 
+// Watchfile containing watch information
 type Watchfile struct {
 	Watches    []core.Watch
 	Triggers   []core.WatchTrigger
@@ -99,6 +100,7 @@ func getWatch(watchLine string) core.Watch {
 		}
 	}
 
+	log.Warn("Unknown watch %s", watchLine)
 	return nil
 }
 

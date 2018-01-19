@@ -37,7 +37,7 @@ func main() {
 	var trigger = triggers.NewFuncTrigger(func(e *core.WatchEvent) {
 		fmt.Println("Process", pid, "has high io:")
 	})
-	var watchMan = watchers.NewWatchMan(ioWatch)
+	var watchMan = watchers.NewWatchMan([]core.Watch{ioWatch})
 	watchMan.Watch(trigger)
 	select {}
 }

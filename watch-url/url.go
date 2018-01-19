@@ -28,7 +28,7 @@ func main() {
 		return
 	}
 
-	var watchMan = watchers.NewWatchMan(modifiedWatch)
+	var watchMan = watchers.NewWatchMan([]core.Watch{modifiedWatch})
 
 	// Create the triggers
 	var modifiedTrigger = triggers.NewFuncTrigger(func(e *core.WatchEvent) {
