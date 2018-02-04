@@ -1,23 +1,23 @@
 package triggers
 
 import (
-	"fmt"
+    "fmt"
 
-	"github.com/deanydean/clockwork/core"
+    "github.com/deanydean/clockwork/core"
 )
 
 // TextReporterTrigger reports using text when a watch event triggers
 type TextReporterTrigger struct {
-	message string
+    message string
 }
 
 // OnEvent is called when a watch event triggers
 func (trigger TextReporterTrigger) OnEvent(event *core.WatchEvent) {
-	fmt.Printf(trigger.message, event)
+    fmt.Printf(trigger.message, event)
 }
 
 func NewTextReporterTrigger(message string) TextReporterTrigger {
-	var trigger = new(TextReporterTrigger)
-	trigger.message = message
-	return *trigger
+    var trigger = new(TextReporterTrigger)
+    trigger.message = message
+    return *trigger
 }
