@@ -3,7 +3,7 @@ package watchers
 import (
 	"time"
 
-	"github.com/oddcyborg/watchit/core"
+	"github.com/deanydean/clockwork/core"
 )
 
 // WatchMan is a Watcher that links a number of Watches to a WatchTrigger

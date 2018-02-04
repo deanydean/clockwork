@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/oddcyborg/watchit/core"
+	"github.com/deanydean/clockwork/core"
 )
 
 var lastModifiedHeader = "Last-Modified"

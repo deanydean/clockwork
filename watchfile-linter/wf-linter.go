@@ -6,8 +6,8 @@ import (
 	"path"
 	"reflect"
 
-	"github.com/deanydean/watchit/core/utils"
-	"github.com/deanydean/watchit/core/watchfiles"
+	"github.com/deanydean/clockwork/core/utils"
+	"github.com/deanydean/clockwork/core/watchfiles"
 )
 
 var log = utils.GetLogger()

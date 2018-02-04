@@ -4,10 +4,10 @@ import (
 	"flag"
 	"fmt"
 
-	"github.com/oddcyborg/watchit/core"
-	"github.com/oddcyborg/watchit/core/triggers"
-	"github.com/oddcyborg/watchit/core/watchers"
-	"github.com/oddcyborg/watchit/core/watches"
+	"github.com/deanydean/clockwork/core"
+	"github.com/deanydean/clockwork/core/triggers"
+	"github.com/deanydean/clockwork/core/watchers"
+	"github.com/deanydean/clockwork/core/watches"
 )
 
 func main() {

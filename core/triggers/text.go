@@ -3,7 +3,7 @@ package triggers
 import (
 	"fmt"
 
-	"github.com/oddcyborg/watchit/core"
+	"github.com/deanydean/clockwork/core"
 )
 
 // TextReporterTrigger reports using text when a watch event triggers

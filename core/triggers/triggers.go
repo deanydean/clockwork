@@ -1,6 +1,6 @@
 package triggers
 
-import "github.com/oddcyborg/watchit/core"
+import "github.com/deanydean/clockwork/core"
 
 // FuncTrigger calls a function when a WatchEvent triggers
 type FuncTrigger struct {

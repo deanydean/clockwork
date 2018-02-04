@@ -4,8 +4,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/oddcyborg/watchit/core"
-	"github.com/oddcyborg/watchit/core/utils"
+	"github.com/deanydean/clockwork/core"
+	"github.com/deanydean/clockwork/core/utils"
 )
 
 var log = utils.GetLogger()

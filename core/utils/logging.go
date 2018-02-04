@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/oddcyborg/watchit/core"
-	"github.com/oddcyborg/watchit/core/triggers"
+	"github.com/deanydean/clockwork/core"
+	"github.com/deanydean/clockwork/core/triggers"
 )
 
 type WatchLogger struct {

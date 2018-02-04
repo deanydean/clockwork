@@ -5,7 +5,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/oddcyborg/watchit/core"
+	"github.com/deanydean/clockwork/core"
 )
 
 // FileName is a key in EventWatch for a file name
