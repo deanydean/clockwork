@@ -1,4 +1,4 @@
-// Package core proces the core watchit API
+// Types for the core clockwork API
 package core
 
 import (
