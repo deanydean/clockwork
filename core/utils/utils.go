@@ -11,44 +11,44 @@ type FilterFunc func(string) bool
 
 // PathExists return true if the provided path exists and false if not
 func PathExists(path string) bool {
-    if _, err := os.Stat(path); !os.IsNotExist(err) {
-        return true
-    }
+	if _, err := os.Stat(path); !os.IsNotExist(err) {
+		return true
+	}
 
-    return false
+	return false
 }
 
 // FilesInDir gets a List of files in the provided directory that match the
 // provided FilterFunc
 func FilesInDir(dir string, filter FilterFunc) *list.List {
-    // Read the files in the directory
-    files, err := ioutil.ReadDir(dir)
+	// Read the files in the directory
+	files, err := ioutil.ReadDir(dir)
 
-    result := list.New()
+	result := list.New()
 
-    // If there's an error, just result nothing
-    if err != nil {
-        log.Fatal(err)
-        return result
-    }
+	// If there's an error, just result nothing
+	if err != nil {
+		log.Fatal(err)
+		return result
+	}
 
-    // Return the files that match the filter
-    for _, f := range files {
-        if filter(f.Name()) {
-            result.PushBack(f)
-        }
-    }
-    return result
+	// Return the files that match the filter
+	for _, f := range files {
+		if filter(f.Name()) {
+			result.PushBack(f)
+		}
+	}
+	return result
 }
 
 // GetFileAsString gets file contents as a string
 func GetFileAsString(path string) (string, error) {
-    bytes, err := ioutil.ReadFile(path)
+	bytes, err := ioutil.ReadFile(path)
 
-    if err != nil {
-        return "", err
-    }
+	if err != nil {
+		return "", err
+	}
 
-    str := string(bytes)
-    return str, nil
+	str := string(bytes)
+	return str, nil
 }
