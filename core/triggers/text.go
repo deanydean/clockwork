@@ -16,6 +16,7 @@ func (trigger TextReporterTrigger) OnEvent(event *core.WatchEvent) {
 	fmt.Printf(trigger.message, event)
 }
 
+// NewTextReporterTrigger create a new TextReporterTrigger
 func NewTextReporterTrigger(message string) TextReporterTrigger {
 	var trigger = new(TextReporterTrigger)
 	trigger.message = message

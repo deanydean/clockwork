@@ -1,9 +1,12 @@
 package utils
 
-import "container/list"
-import "io/ioutil"
-import "log"
-import "os"
+import (
+	"container/list"
+	"io/ioutil"
+	"os"
+)
+
+var log = GetLogger()
 
 // FilterFunc will return true if the provided string matches the filter, false
 // if not
@@ -28,7 +31,7 @@ func FilesInDir(dir string, filter FilterFunc) *list.List {
 
 	// If there's an error, just result nothing
 	if err != nil {
-		log.Fatal(err)
+		log.Error("Cannot get files in dir %s : %s", dir, err)
 		return result
 	}
 

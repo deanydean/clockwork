@@ -1,7 +1,6 @@
 package watches
 
 import (
-	"fmt"
 	"net/http"
 	"time"
 
@@ -24,11 +23,7 @@ func NewURLModifiedWatch(url string) *URLModifiedWatch {
 	watch := new(URLModifiedWatch)
 	watch.url = url
 
-	event := watch.Observe()
-	if event == nil {
-		fmt.Println("Failed to observe URL", url)
-		return nil
-	}
+	watch.Observe()
 
 	return watch
 }
@@ -38,20 +33,20 @@ func (watch *URLModifiedWatch) Observe() *core.WatchEvent {
 	resp, err := http.Head(watch.url)
 
 	if err != nil {
-		fmt.Println("Failed to check url", watch.url, "error", err)
+		log.Debug("Failed to check url", watch.url, "error", err)
 		return nil
 	}
 
 	var modTimeStr = resp.Header.Get(lastModifiedHeader)
 
 	if len(modTimeStr) == 0 {
-		fmt.Println("No modified time for", watch.url, "cannot observe")
+		log.Debug("No modified time for %s cannot observe", watch.url)
 		return nil
 	}
 
 	var modTime, parseErr = http.ParseTime(modTimeStr)
 	if parseErr != nil {
-		fmt.Println("Failed to parse mod time", modTimeStr, "error", parseErr)
+		log.Debug("Failed to parse mod time", modTimeStr, "error", parseErr)
 		return nil
 	}
 

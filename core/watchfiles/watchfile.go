@@ -58,7 +58,11 @@ func Load(watchfile *string) *Watchfile {
 		} else if strings.HasPrefix(line, "WATCH") {
 			// Watch defined
 			log.Debug("Adding watch from lineNo=%d, line=%s", lineIdx, line)
-			wf.Watches = append(wf.Watches, getWatch(line))
+			var watch = getWatch(line)
+
+			if watch != nil {
+				wf.Watches = append(wf.Watches, watch)
+			}
 		} else if strings.HasPrefix(line, "TELL") {
 			// Trigger defined
 			log.Debug("Adding trigger from lineNo=%d, line=%s", lineIdx, line)
@@ -94,7 +98,7 @@ func getWatch(watchLine string) core.Watch {
 		{
 			return watches.NewFileModifiedWatch(url.Path)
 		}
-	default:
+	case "http":
 		{
 			return watches.NewURLModifiedWatch(sections[1])
 		}

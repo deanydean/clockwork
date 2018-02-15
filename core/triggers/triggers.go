@@ -9,7 +9,9 @@ type FuncTrigger struct {
 
 // OnEvent is called when a WatchEvent triggers
 func (trigger FuncTrigger) OnEvent(event *core.WatchEvent) {
-	trigger.onEvent(event)
+	go func() {
+		trigger.onEvent(event)
+	}()
 }
 
 // NewFuncTrigger create a new FuncTrigger for the provided func
@@ -28,7 +30,10 @@ type BroadcastTrigger struct {
 // OnEvent is called when a WatchEvent triggers
 func (bt BroadcastTrigger) OnEvent(e *core.WatchEvent) {
 	for t := range bt.triggers {
-		bt.triggers[t].OnEvent(e)
+		trigger := bt.triggers[t]
+		go func() {
+			trigger.OnEvent(e)
+		}()
 	}
 }
 
