@@ -74,6 +74,7 @@ var defaultLevel = LogInfo
 
 // Default global log handler
 var globalHandler = triggers.NewFuncTrigger(func(event *core.WatchEvent) {
+	fmt.Printf("[%s] ", event.GetTime())
 	fmt.Printf(event.GetAsString(logFormat), event.GetAsArray(logParams)...)
 })
 

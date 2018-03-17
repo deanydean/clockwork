@@ -1,6 +1,8 @@
 package watches
 
 import (
+	"bufio"
+	"os/exec"
 	"strings"
 	"time"
 
@@ -287,4 +289,98 @@ func (watch *ProcessIOWatch) Observe() *core.WatchEvent {
 	}
 
 	return core.NewWatchEvent(io)
+}
+
+// CommandWatch runs and watches a command
+type CommandWatch struct {
+	cmd        *exec.Cmd
+	stdout     *bufio.Reader
+	stderr     *bufio.Reader
+	readBuffer []byte
+	complete   bool
+}
+
+// Observe a command
+func (watch *CommandWatch) Observe() *core.WatchEvent {
+	// The data to go into the event
+	data := make(map[string]interface{})
+
+	if watch.complete {
+		log.Warn("Watch is complete, setting status on event to -1")
+		e := core.NewWatchEvent(data)
+		e.SetStatus(-1, true)
+		return e
+	}
+
+	// Read output
+	if watch.stdout.Buffered() > 0 {
+		// Read buffered output
+		c, err := watch.stdout.Read(watch.readBuffer)
+		if err != nil || c <= 0 {
+			log.Error("Failed to read output", err)
+			data["output-error"] = err
+			data["output-error-message"] = "Unable to read stdout"
+		} else {
+			// Put the bytes
+			log.Debug("Reading %i bytes from stdout", c)
+			buf := make([]byte, c)
+			copy(buf, watch.readBuffer)
+			data["output"] = buf
+		}
+	}
+
+	// Read error
+	if watch.stderr.Buffered() > 0 {
+		// Read buffered error
+		c, err := watch.stderr.Read(watch.readBuffer)
+		if err != nil || c <= 0 {
+			data["error-error"] = err
+			data["error-error-message"] = "Unable to read stderr"
+		} else {
+			// Put the bytes
+			buf := make([]byte, c)
+			copy(buf, watch.readBuffer)
+			data["error"] = buf
+		}
+	}
+
+	return core.NewWatchEvent(data)
+}
+
+// NewCommandWatch creates a CommandWatch
+func NewCommandWatch(name string, args []string) *CommandWatch {
+	watch := new(CommandWatch)
+
+	watch.readBuffer = make([]byte, 1024)
+	watch.cmd = exec.Command(name, args...)
+
+	// Get the pipes
+	stdoutPipe, err := watch.cmd.StdoutPipe()
+	if err != nil {
+		log.Warn("Unable to get stdout for %s", name)
+	}
+
+	stderrPipe, err := watch.cmd.StderrPipe()
+	if err != nil {
+		log.Warn("Unable to get stderr for %s", name)
+	}
+
+	watch.stdout = bufio.NewReader(stdoutPipe)
+	watch.stderr = bufio.NewReader(stderrPipe)
+
+	// Start the command
+	watch.cmd.Start()
+	watch.complete = false
+
+	// Wait for it to finish
+	go func() {
+		if err := watch.cmd.Wait(); err != nil {
+			log.Error("Command failed %s", err)
+		}
+
+		log.Warn("Command is complete")
+		watch.complete = true
+	}()
+
+	return watch
 }

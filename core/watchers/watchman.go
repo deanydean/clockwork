@@ -38,8 +38,13 @@ func (wm WatchMan) Watch(trigger core.WatchTrigger) core.WatcherCanceller {
 				go func() {
 					result := watch.Observe()
 					if result != nil {
-						log.Debug("Got result=%s from watch=%s", result.Data,
-							watch)
+						log.Debug("Got result=%s", result.Data)
+
+						if result.ShouldStop() {
+							log.Warn("Watch needs to stop")
+							wm.stopper <- true
+							return
+						}
 
 						// Send the trigger
 						go func() {
